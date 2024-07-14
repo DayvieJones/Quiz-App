@@ -1,6 +1,6 @@
 const questionPool = [
     {
-        question: "Wie ist die Hauptstadt von Deutschland?",
+        question: "Wie heißt die Hauptstadt von Deutschland?",
         id: 1,
         answers: [
             { answer: "Hamburg", correct: false, id: 10 },
@@ -10,7 +10,7 @@ const questionPool = [
         ],
     },
     {
-        question: "Welche ist die längste Autobahn in Deutschland?",
+        question: "Welche Autobahn ist die längste in Deutschland?",
         id: 2,
         answers: [
             { answer: "A1", correct: false, id: 10 },
@@ -30,7 +30,7 @@ const questionPool = [
         ],
     },
     {
-        question: "Wann wurde der Eifelturm erbaut?",
+        question: "In welchem Jahr wurde der Eifelturm erbaut?",
         id: 4,
         answers: [
             { answer: "1789", correct: false, id: 10 },
@@ -60,18 +60,33 @@ const questionPool = [
         ],
     },
 ];
-let currentQuestion; //zwischenspeicher der aktuellen Frage
-let currentQuestionCount = -1; //index der aktuellen Frage
-const randomQuestion = questionPool[Math.floor(Math.random() * questionPool.length)];
-// displayQuestion(randomQuestion);
+// The current question can be of type `Question` or `undefined`.
+let currentQuestion = questionPool[0]; // intermediate storage of the current question
+let currentQuestionCount = -1; // index of the current question, initial value -1
+// Function for deactivating the "Next" button
+function disableNextButton() {
+    const nextQuestionButton = document.getElementById("nextQuestion");
+    if (nextQuestionButton) {
+        nextQuestionButton.disabled = true;
+    }
+}
+// Function for activating the "Next" button
+function enableNextButton() {
+    const nextQuestionButton = document.getElementById("nextQuestion");
+    if (nextQuestionButton) {
+        nextQuestionButton.disabled = false;
+    }
+}
 function displayQuestion(question) {
     //creating Question display
     const displayQuestionDiv = document.querySelector("#displayQuestion");
+    if (!displayQuestionDiv)
+        return;
     //creating Card of question
     const questionCardDiv = document.createElement("div");
     displayQuestionDiv.appendChild(questionCardDiv);
     questionCardDiv.classList.add("questionCard");
-    questionCardDiv.id = question.id;
+    questionCardDiv.id = question.id.toString();
     //creating Title of Question
     const questionTitleDiv = document.createElement("div");
     questionTitleDiv.classList.add("questionTitle");
@@ -80,20 +95,13 @@ function displayQuestion(question) {
     //creating grid div for answer buttons
     const gridAnswerButtonsDiv = document.createElement("div");
     gridAnswerButtonsDiv.classList.add("gridAnswerButtons");
-    //creating answer buttons
-    //1: Kopie des Antwort Arrays erstellen
-    const answerListCopy = [];
-    question.answers.forEach((answer) => {
-        answerListCopy.push(answer);
-    });
-    //2: while schleife erstellen & mit math.random zufällige vorhandene
-    //Elemente herausschneinen
+    const answerListCopy = [...question.answers];
     while (answerListCopy.length > 0) {
         const randomAnswerIndex = Math.floor(Math.random() * answerListCopy.length);
         const answer = answerListCopy.splice(randomAnswerIndex, 1)[0];
         const answerButton = document.createElement("button");
         answerButton.classList.add("answer");
-        answerButton.setAttribute("id", answer.id);
+        answerButton.setAttribute("id", answer.id.toString());
         answerButton.textContent = answer.answer;
         gridAnswerButtonsDiv.appendChild(answerButton);
         questionCardDiv.appendChild(gridAnswerButtonsDiv);
@@ -101,41 +109,59 @@ function displayQuestion(question) {
             checkIfAnswerIsCorrect(answer);
         });
     }
+    disableNextButton(); // Deactivate the "Next" button until an answer has been selected
 }
 function checkIfAnswerIsCorrect(answer) {
-    const answerCheckButtonElement = document.getElementById(answer.id);
-    if (answer.correct) {
-        answerCheckButtonElement.classList.add("answerCorrect");
-    }
-    else {
-        //ID des Buttons mit der richtgen ID finden
-        showAnswer();
-        answerCheckButtonElement.classList.add("answerIncorrect");
+    const answerCheckButtonElement = document.getElementById(answer.id.toString());
+    if (answerCheckButtonElement) {
+        if (answer.correct) {
+            answerCheckButtonElement.classList.add("answerCorrect");
+        }
+        else {
+            //Find the ID of the button with the correct ID
+            showAnswer();
+            answerCheckButtonElement.classList.add("answerIncorrect");
+        }
+        enableNextButton(); // Activate the "Next" button when an answer has been selected
     }
 }
 function nextQuestion() {
-    //löschen der inizial erstellen Frage
     if (currentQuestion) {
-        document.getElementById(String(currentQuestion.id)).remove();
+        const questionCard = document.getElementById(currentQuestion.id.toString());
+        if (questionCard) {
+            questionCard.remove();
+        }
     }
-    //Methode zum Anzeigen der nächsten Frage
     if (currentQuestionCount + 1 < questionPool.length) {
         currentQuestionCount++;
-        currentQuestion = questionPool[currentQuestionCount];
     }
     else {
         currentQuestionCount = 0;
-        currentQuestion = questionPool[currentQuestionCount];
     }
+    currentQuestion = questionPool[currentQuestionCount];
     displayQuestion(currentQuestion);
 }
 function showAnswer() {
-    //ID des buttons mit der richtigen ID finden
-    const correctAnswer = currentQuestion.answers.find((ans) => {
-        return ans.correct;
-    });
-    //Butten mit der richtigen ID zugreifen
-    const correctButton = document.getElementById(correctAnswer.id);
-    //Butten mit der richtigen Klasse zuweisen
-    correctButton.classList.add("answerCorrect");
+    if (!currentQuestion)
+        return;
+    const correctAnswer = currentQuestion.answers.find((ans) => ans.correct);
+    if (correctAnswer) {
+        const correctButton = document.getElementById(correctAnswer.id.toString());
+        if (correctButton) {
+            correctButton.classList.add("answerCorrect");
+            enableNextButton(); // Activate the "Next" button when the correct answer is displayed
+        }
+    }
 }
+window.addEventListener("DOMContentLoaded", () => {
+    nextQuestion(); // displays the first question
+    const showAnswerButton = document.getElementById("showAnswer");
+    const nextQuestionButton = document.getElementById("nextQuestion");
+    if (showAnswerButton) {
+        showAnswerButton.addEventListener("click", showAnswer);
+    }
+    if (nextQuestionButton) {
+        nextQuestionButton.addEventListener("click", nextQuestion);
+    }
+});
+export {};
